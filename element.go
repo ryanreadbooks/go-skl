@@ -1,7 +1,7 @@
 package goskl
 
 type Pair struct {
-	Key   string
+	Key   interface{}
 	Value interface{}
 }
 
@@ -11,7 +11,7 @@ type Node struct {
 	nexts []*Node
 }
 
-func NewNode(k string, v interface{}, level int) *Node {
+func NewNode(k interface{}, v interface{}, level int) *Node {
 	return &Node{
 		Pair: &Pair{
 			Key:   k,

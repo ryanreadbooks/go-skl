@@ -31,7 +31,11 @@ func ShouldBeSorted(actual any, expect ...any) string {
 
 	nodes := skl.List()
 	for i := 0; i < len(nodes)-1; i++ {
-		if nodes[i].Key >= nodes[i+1].Key {
+		c, err := skl.Comparator().Compare(nodes[i].Key, nodes[i+1].Key)
+		if err != nil {
+			return fmt.Sprintf("err should be nil, but got %v", err)
+		}
+		if c != goskl.LessThan { // >=
 			return "skiplist is not sorted"
 		}
 	}
@@ -44,7 +48,7 @@ func TestSkiplist(t *testing.T) {
 }
 
 func (s *TestSkiplistSuite) SetupTest() {
-	s.skl = goskl.New(16)
+	s.skl = goskl.New(16, goskl.StringCmp)
 }
 
 func (s *TestSkiplistSuite) TearDownTest() {
@@ -274,7 +278,7 @@ func (s *TestSkiplistSuite) TestFirst() {
 
 // Benchmarks
 func BenchmarkPut(b *testing.B) {
-	skl := goskl.New(goskl.DefaultMaxLevel)
+	skl := goskl.New(goskl.DefaultMaxLevel, goskl.StringCmp)
 	keys := make([]string, 0, b.N)
 	values := make([]interface{}, 0, b.N)
 	for i := 0; i < b.N; i++ {
@@ -289,7 +293,7 @@ func BenchmarkPut(b *testing.B) {
 }
 
 func BenchmarkGet(b *testing.B) {
-	skl := goskl.New(goskl.DefaultMaxLevel)
+	skl := goskl.New(goskl.DefaultMaxLevel, goskl.StringCmp)
 	keys := make([]string, 0, b.N)
 	values := make([]interface{}, 0, b.N)
 	for i := 0; i < b.N; i++ {
@@ -314,7 +318,7 @@ func BenchmarkGet(b *testing.B) {
 }
 
 func BenchmarkRemove(b *testing.B) {
-	skl := goskl.New(goskl.DefaultMaxLevel)
+	skl := goskl.New(goskl.DefaultMaxLevel, goskl.StringCmp)
 	keys := make([]string, 0, b.N)
 	values := make([]interface{}, 0, b.N)
 	for i := 0; i < b.N; i++ {

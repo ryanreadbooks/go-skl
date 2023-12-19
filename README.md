@@ -4,10 +4,13 @@ go-skl is a straightforward skiplist implementation in golang.
 
 Implementations are:
 ```golang
-Put(k string, v interface{}) bool
-Get(k string) (interface{}, bool)
-Remove(k string) bool
+Put(k interface{}, v interface{}) bool
+Get(k interface{}) (interface{}, bool)
+Remove(k interface{}) bool
 List() []*Pair
 Size() int
 First() *Pair
 ```
+
+**Future works**
+- Improve benchmark results.

@@ -8,17 +8,23 @@ const (
 
 // Skiplist represents a skiplist structure
 type Skiplist struct {
-	head     *Node
-	size     int
-	maxLevel int
+	head       *Node
+	size       int
+	maxLevel   int
+	comparator Comparator
 }
 
 // New returns a new skiplist instance with whose max level is maxLevel.
-func New(maxLevel int) *Skiplist {
+func New(maxLevel int, comparator Comparator) *Skiplist {
+	if maxLevel < 1 {
+		panic("maxLevel should be at least 1")
+	}
+
 	l := &Skiplist{
-		head:     NewNode("", nil, 1),
-		size:     0,
-		maxLevel: maxLevel,
+		head:       NewNode(comparator.Default(), nil, 1),
+		size:       0,
+		maxLevel:   maxLevel,
+		comparator: comparator,
 	}
 
 	return l
@@ -30,7 +36,7 @@ func (s *Skiplist) Level() int {
 }
 
 // Put puts a k-v pair into skiplist. If key already exists, value is updated.
-func (s *Skiplist) Put(k string, v interface{}) (res bool) {
+func (s *Skiplist) Put(k interface{}, v interface{}) (res bool) {
 	pre := s.findLastLeThan(k)
 	if pre == nil {
 		res = false // theoretically this will not happen
@@ -38,7 +44,7 @@ func (s *Skiplist) Put(k string, v interface{}) (res bool) {
 	}
 
 	// update existing key-value
-	if pre.Key == k {
+	if s.isEqual(pre.Key, k) {
 		pre.Value = v
 		return true
 	}
@@ -52,7 +58,7 @@ func (s *Skiplist) Put(k string, v interface{}) (res bool) {
 	// find the gap and perform the insert operation
 	cur := s.head
 	for l := s.Level() - 1; l >= 0; l-- {
-		for cur.nexts[l] != nil && cur.nexts[l].Key < k {
+		for cur.nexts[l] != nil && s.isLess(cur.nexts[l].Key, k) {
 			cur = cur.nexts[l]
 		}
 
@@ -74,9 +80,9 @@ func (s *Skiplist) adjustLevel(wanted int) {
 }
 
 // Get returns the value of the given key if it has present.
-func (s *Skiplist) Get(k string) (interface{}, bool) {
+func (s *Skiplist) Get(k interface{}) (interface{}, bool) {
 	pre := s.findLastLeThan(k)
-	if pre != nil && pre.Key == k {
+	if pre != nil && s.isEqual(pre.Key, k) {
 		return pre.Value, true
 	}
 
@@ -84,30 +90,30 @@ func (s *Skiplist) Get(k string) (interface{}, bool) {
 }
 
 // Has checks whether the given key is existing in skiplist
-func (s *Skiplist) Has(k string) bool {
+func (s *Skiplist) Has(k interface{}) bool {
 	_, ok := s.Get(k)
 	return ok
 }
 
 // Remove removes the given key in skiplist.
-func (s *Skiplist) Remove(k string) bool {
+func (s *Skiplist) Remove(k interface{}) bool {
 	pre := s.findLastLeThan(k)
 	if pre == nil {
 		return false
 	}
 
 	// key not exist
-	if pre.Key != k {
+	if !s.isEqual(pre.Key, k) {
 		return false
 	}
 
 	cur := s.head
 	for level := s.Level() - 1; level >= 0; level-- {
-		for cur.nexts[level] != nil && cur.nexts[level].Key < k {
+		for cur.nexts[level] != nil && s.isLess(cur.nexts[level].Key, k) {
 			cur = cur.nexts[level]
 		}
 
-		if cur.nexts[level] == nil || cur.nexts[level].Key > k {
+		if cur.nexts[level] == nil || s.isGreater(cur.nexts[level].Key, k) {
 			continue
 		}
 
@@ -138,13 +144,13 @@ func (s *Skiplist) determineLevel() int {
 	return level
 }
 
-// find the last node whose key is smaller or equal than the given key.
-func (s *Skiplist) findLastLeThan(k string) *Node {
+// find the last node whose key is smaller than or equal to the given key.
+func (s *Skiplist) findLastLeThan(k interface{}) *Node {
 	cur := s.head
 	// from top to down
 	for level := s.Level() - 1; level >= 0; level-- {
 		// from left to right
-		for cur.nexts[level] != nil && cur.nexts[level].Key <= k {
+		for cur.nexts[level] != nil && s.isLessEqual(cur.nexts[level].Key, k) {
 			cur = cur.nexts[level]
 		}
 	}
@@ -179,4 +185,44 @@ func (s *Skiplist) First() *Pair {
 		Key:   s.head.nexts[0].Key,
 		Value: s.head.nexts[0].Value,
 	}
+}
+
+func (s *Skiplist) isLessEqual(lhs, rhs interface{}) bool {
+	res, err := s.comparator.Compare(lhs, rhs)
+	if err != nil {
+		return false
+	}
+
+	return res != GreaterThan
+}
+
+func (s *Skiplist) isLess(lhs, rhs interface{}) bool {
+	res, err := s.comparator.Compare(lhs, rhs)
+	if err != nil {
+		return false
+	}
+
+	return res == LessThan
+}
+
+func (s *Skiplist) isEqual(lhs, rhs interface{}) bool {
+	res, err := s.comparator.Compare(lhs, rhs)
+	if err != nil {
+		return false
+	}
+
+	return res == EqualTo
+}
+
+func (s *Skiplist) isGreater(lhs, rhs interface{}) bool {
+	res, err := s.comparator.Compare(lhs, rhs)
+	if err != nil {
+		return false
+	}
+
+	return res == GreaterThan
+}
+
+func (s *Skiplist) Comparator() Comparator {
+	return s.comparator
 }
