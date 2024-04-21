@@ -293,6 +293,7 @@ func BenchmarkPut(b *testing.B) {
 }
 
 func BenchmarkGet(b *testing.B) {
+	b.StopTimer()
 	skl := goskl.New(goskl.DefaultMaxLevel, goskl.StringCmp)
 	keys := make([]string, 0, b.N)
 	values := make([]interface{}, 0, b.N)
@@ -311,13 +312,14 @@ func BenchmarkGet(b *testing.B) {
 		keys[i], keys[j] = keys[j], keys[i]
 	})
 
-	b.ResetTimer()
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		skl.Get(keys[i])
 	}
 }
 
 func BenchmarkRemove(b *testing.B) {
+	b.StopTimer()
 	skl := goskl.New(goskl.DefaultMaxLevel, goskl.StringCmp)
 	keys := make([]string, 0, b.N)
 	values := make([]interface{}, 0, b.N)
@@ -335,7 +337,7 @@ func BenchmarkRemove(b *testing.B) {
 		keys[i], keys[j] = keys[j], keys[i]
 	})
 
-	b.ResetTimer()
+	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		skl.Remove(keys[i])
 	}

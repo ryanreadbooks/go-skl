@@ -3,7 +3,7 @@ package goskl
 import "math/rand"
 
 const (
-	DefaultMaxLevel = 16
+	DefaultMaxLevel = 64
 )
 
 // Skiplist represents a skiplist structure
